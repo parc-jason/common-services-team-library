@@ -37,7 +37,7 @@ describe('carbone-render', () => {
   });
 
   it('should render html', async () => {
-     const templatePath = require.resolve('./assets/template_attestation.html');
+    const templatePath = require.resolve('./assets/template_attestation.html');
     const data = require('./assets/contexts_attestation.json');
     const options = {};
     // this template uses custom formatters, so this is a good test for that too...
