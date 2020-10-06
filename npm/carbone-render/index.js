@@ -1,15 +1,27 @@
-const carbone = require('carbone');
+const carbone1 = require('carbone1');
+const carbone2 = require('carbone2');
 const fs = require('fs-extra');
 const path = require('path');
 const {v4: uuidv4} = require('uuid');
 
+const carbone1Version = require('carbone1/package.json').version;
+const carbone2Version = require('carbone2/package.json').version;
+
 const asyncRender = async (template, data, options) => {
   return new Promise(((resolve, reject) => {
-    carbone.render(template, data, options, (err, result, reportName) => {
+    // try using the carbone 2 render first
+    // if it errors out (ex html -> pdf conversion), then try carbone 1
+    carbone2.render(template, data, options, (err, result, reportName) => {
       if (err) {
-        reject(err);
+        carbone1.render(template, data, options, (err, result, reportName) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve({report: result, reportName: reportName, engine: `carbone@${carbone1Version}`});
+          }
+        });
       } else {
-        resolve({report: result, reportName: reportName});
+        resolve({report: result, reportName: reportName, engine: `carbone@${carbone2Version}`});
       }
     });
   }));
@@ -81,12 +93,15 @@ module.exports.fileTypes = {
 
 // initialize carbone formatters, add a marker to indicate defaults...
 // unfortunately carbone is a singleton and we cannot set formatters for each render call,
-const DEFAULT_CARBONE_FORMATTERS = Object.freeze(Object.assign({}, carbone.formatters));
+const DEFAULT_CARBONE_1_FORMATTERS = Object.freeze(Object.assign({}, carbone1.formatters));
+const DEFAULT_CARBONE_2_FORMATTERS = Object.freeze(Object.assign({}, carbone2.formatters));
 
 const addFormatters = formatters => {
   if (Object.keys(formatters).length) {
-    carbone.formatters = Object.assign({}, DEFAULT_CARBONE_FORMATTERS);
-    carbone.addFormatters(formatters);
+    carbone1.formatters = Object.assign({}, DEFAULT_CARBONE_1_FORMATTERS);
+    carbone1.addFormatters(formatters);
+    carbone2.formatters = Object.assign({}, DEFAULT_CARBONE_2_FORMATTERS);
+    carbone2.addFormatters(formatters);
     return true;
   }
   return false;
@@ -94,12 +109,14 @@ const addFormatters = formatters => {
 
 const resetFormatters = reset => {
   if (reset) {
-    carbone.formatters = Object.assign({}, DEFAULT_CARBONE_FORMATTERS);
+    carbone1.formatters = Object.assign({}, DEFAULT_CARBONE_1_FORMATTERS);
+    carbone2.formatters = Object.assign({}, DEFAULT_CARBONE_2_FORMATTERS);
   }
 };
 
 module.exports.startFactory = () => {
-  carbone.set({startFactory: true});
+  carbone1.set({startFactory: true});
+  carbone2.set({startFactory: true});
 };
 
 
@@ -137,10 +154,11 @@ module.exports.render = async (template, data = {}, options = {}, formatters = {
     const renderResult = await asyncRender(template, data, options);
     result.report = renderResult.report;
     result.reportName = renderResult.reportName;
+    result.engine = renderResult.engine;
     result.success = true;
   } catch (e) {
     result.errorType = 500;
-    result.errorMsg = `Could not render template. ${e.message}`;
+    result.errorMsg = `Could not render template. ${e.message ? e.message : e}`;
   }
   resetFormatters(reset);
   return result;

@@ -1,6 +1,10 @@
 ## carbone-render
 Library to generate a document from an existing template and JSON data.  This is a wrapper around [carbone](https://carbone.io), please refer to their documentation for more detail.  
 
+__EXTREMELY IMPORTANT__: The carbone-render library now loads 2 versions of [carbone](https://carbone.io) - currently 1.2.1 and 2.1.1.  
+Carbone 2 has some amazing features and bug fixes (see [change log](https://github.com/Ideolys/carbone/blob/master/CHANGELOG.md)); however, it removed some crucial functionality (for example, conversion from html to pdf). Please be aware that conversions may not work as expected and to thoroughly check your templates and resulting reports. We will attempt to convert using Carbone 2, and on error, convert using Carbone 1.
+
+
 ### important
 This library will require LibreOffice installed.  It requires LibreOffice to do pdf generation.  
   
@@ -142,7 +146,8 @@ const output = await carboneRenderer.render(template.path, data, options, format
     errorType: null, 
     errorMsg: null, 
     reportName: null, 
-    report: null
+    report: null,
+    engine: null
 }
 ```
 
@@ -153,6 +158,6 @@ const output = await carboneRenderer.render(template.path, data, options, format
 | errorMsg | string - error message if not successful. |
 | reportName | string - name of the generated report |
 | report | binary - generated file |
-
+| engine | string - which carbone engine rendered the report |
 
 
